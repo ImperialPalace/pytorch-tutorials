@@ -8,11 +8,14 @@
 import os
 import random
 import cv2
+from PIL import Image
+import torch
+import torch.nn.functional as F
 
 
 class DataGenerator(object):
 
-    def __init__(self, data_path, width, height):
+    def __init__(self, data_path, width, height, transform):
         self.data_path = data_path
         self.width = width
         self.height = height
@@ -22,6 +25,8 @@ class DataGenerator(object):
         self.name_classes = []
 
         self.index = 0
+
+        self.transform = transform
 
         self.init()
 
@@ -51,22 +56,21 @@ class DataGenerator(object):
         return len(self.inputs)
 
     def comput_inputs(self, index):
-        image = cv2.imread(self.inputs[index])
-        image = cv2.resize(image, (self.width, self.height))
+        path = self.inputs[index]
+        image = Image.open(path).convert('RGB')
+        if self.transform is not None:
+            image = self.transform(image)
         return image
 
     def comput_target(self, index):
-        return self.labels[index]
+        return F.one_hot(torch.tensor([self.labels[index]], dtype=int), num_classes=self.num_classes()).type(
+            torch.float32)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.index <= self.size():
-            inputs = self.comput_inputs(self.index)
-            targets = self.comput_target(self.index)
-
-            self.index += 1
-            return inputs, targets
-        else:
-            return StopIteration
+        inputs = self.comput_inputs(self.index)
+        targets = self.comput_target(self.index)
+        self.index = (self.index + 1) % self.size()
+        return torch.unsqueeze(inputs, dim=0).cuda(), targets.cuda()

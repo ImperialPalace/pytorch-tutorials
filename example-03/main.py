@@ -10,18 +10,30 @@ import argparse
 from dataset import DataGenerator
 from vgg import vgg16
 
+from torchvision import transforms
+
 parser = argparse.ArgumentParser(description='Get the data info')
 parser.add_argument('--data_path', help='data path', default='/work/home/syh/vgg/data/train')
 args = parser.parse_args()
 
 if __name__ == '__main__':
-    num_classes = 1000
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    num_classes = 2
 
     model = vgg16(num_classes)
-    input = torch.randn(1, 3, 224, 224)
-    output = model(input)
+    model.to(device)
+
     width = 224
     height = 224
-    dataloader = DataGenerator(args.data_path, width, height)
+
+    normalize = transforms.Normalize([0.485, 0.485, 0.485], [0.229, 0.229, 0.229])
+    transform = transforms.Compose(
+        [transforms.Resize((width, height)), transforms.RandomHorizontalFlip(), transforms.ToTensor(), normalize])
+
+    dataloader = DataGenerator(args.data_path, width, height, transform)
+
     for inputs, targets in dataloader:
-        print(inputs.shape, targets)
+        output = model(inputs)
+        criterion = torch.nn.BCEWithLogitsLoss()
+        loss = criterion(output, targets)
+        print(loss)
