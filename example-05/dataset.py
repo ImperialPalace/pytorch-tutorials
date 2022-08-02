@@ -76,4 +76,5 @@ class DataGenerator(object):
             self.index = self.index + 1
             return torch.unsqueeze(inputs, dim=0).cuda(), targets.cuda()
         else:
-            return StopIteration
+            self.index = 0
+            raise StopIteration
