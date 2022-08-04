@@ -113,7 +113,7 @@ if __name__ == '__main__':
         test(model, test_loader)
         scheduler.step()
 
-        checkpoint_path = os.path.join(args.checkpoint, date_time)
+        checkpoint_path = os.path.join(args.checkpoint_path, date_time)
         if not os.path.exists(checkpoint_path):
             os.makedirs(checkpoint_path)
 
