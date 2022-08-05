@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -----------------------------------------------------
-# @Time : 2022/8/4
-# @Author  : Firmin.Sun(fmsunyh@gmail.com)
-# @Software: ZJ_AI
-# -----------------------------------------------------
-# -*- coding: utf-8 -*-
 import argparse
 import os
 import random
@@ -29,8 +22,8 @@ import torchvision.models as models
 from torch.utils.data import Subset
 
 model_names = sorted(name for name in models.__dict__
-                     if name.islower() and not name.startswith("__")
-                     and callable(models.__dict__[name]))
+    if name.islower() and not name.startswith("__")
+    and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR', default='imagenet',
@@ -38,8 +31,8 @@ parser.add_argument('data', metavar='DIR', default='imagenet',
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     choices=model_names,
                     help='model architecture: ' +
-                         ' | '.join(model_names) +
-                         ' (default: resnet18)')
+                        ' | '.join(model_names) +
+                        ' (default: resnet18)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
@@ -183,10 +176,10 @@ def main_worker(gpu, ngpus_per_node, args):
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
-
+    
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
-
+    
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
@@ -264,22 +257,23 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
-
+        
         scheduler.step()
 
+        
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
 
         if not args.multiprocessing_distributed or (args.multiprocessing_distributed
-                                                    and args.rank % ngpus_per_node == 0):
+                and args.rank % ngpus_per_node == 0):
             save_checkpoint({
                 'epoch': epoch + 1,
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
-                'optimizer': optimizer.state_dict(),
-                'scheduler': scheduler.state_dict()
+                'optimizer' : optimizer.state_dict(),
+                'scheduler' : scheduler.state_dict()
             }, is_best)
 
 
@@ -331,6 +325,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
 
 def validate(val_loader, model, criterion, args):
+
     def run_validate(loader, base_progress=0):
         with torch.no_grad():
             end = time.time()
@@ -393,17 +388,14 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     if is_best:
         shutil.copyfile(filename, 'model_best.pth.tar')
 
-
 class Summary(Enum):
     NONE = 0
     AVERAGE = 1
     SUM = 2
     COUNT = 3
 
-
 class AverageMeter(object):
     """Computes and stores the average and current value"""
-
     def __init__(self, name, fmt=':f', summary_type=Summary.AVERAGE):
         self.name = name
         self.fmt = fmt
@@ -431,7 +423,7 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
-
+    
     def summary(self):
         fmtstr = ''
         if self.summary_type is Summary.NONE:
@@ -444,7 +436,7 @@ class AverageMeter(object):
             fmtstr = '{name} {count:.3f}'
         else:
             raise ValueError('invalid summary type %r' % self.summary_type)
-
+        
         return fmtstr.format(**self.__dict__)
 
 
@@ -458,7 +450,7 @@ class ProgressMeter(object):
         entries = [self.prefix + self.batch_fmtstr.format(batch)]
         entries += [str(meter) for meter in self.meters]
         print('\t'.join(entries))
-
+        
     def display_summary(self):
         entries = [" *"]
         entries += [meter.summary() for meter in self.meters]
@@ -468,7 +460,6 @@ class ProgressMeter(object):
         num_digits = len(str(num_batches // 1))
         fmt = '{:' + str(num_digits) + 'd}'
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
-
 
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
