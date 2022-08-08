@@ -2,6 +2,30 @@
 
 This implements training of popular model architectures, such as ResNet, AlexNet, and VGG on the ImageNet dataset.
 
+## My Training
+```commandline
+python main.py /document/ILSVRC2012/ILSVRC2012/
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+From repo:
+
 ## Requirements
 
 - Install PyTorch ([pytorch.org](http://pytorch.org))

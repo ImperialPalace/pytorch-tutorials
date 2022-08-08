@@ -5,22 +5,18 @@
 # @Software: ZJ_AI
 # -----------------------------------------------------
 # -*- coding: utf-8 -*-
-import torch
 import argparse
-from dataset import DataGenerator
-from vgg import vgg16
-import torch.nn.functional as F
-from torchvision import transforms
 import os
-from torch.optim.lr_scheduler import StepLR
+import time
 from datetime import datetime
 
-from torch import nn
-import math
+import torch.nn.functional as F
+import torchvision.datasets as datasets
+from torch.optim.lr_scheduler import StepLR
+from torchvision import transforms
 
-import time
 from utils import *
-
+from vgg import vgg16
 
 
 def train(args, model, data_loader, optimizer, epoch):
@@ -30,7 +26,7 @@ def train(args, model, data_loader, optimizer, epoch):
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
     progress = ProgressMeter(
-        data_loader.size(),
+        len(data_loader),
         [batch_time, data_time, losses,  top1, top5],
         prefix="Epoch: [{}]".format(epoch))
 
@@ -40,6 +36,8 @@ def train(args, model, data_loader, optimizer, epoch):
     try:
         for batch_idx, (inputs, target) in enumerate(data_loader):
             data_time.update(time.time() - end)
+            inputs = inputs.cuda()
+            target = target.cuda()
 
             optimizer.zero_grad()
             output = model(inputs)
@@ -72,6 +70,9 @@ def test(model, data_loader):
     try:
         with torch.no_grad():
             for batch_idx, (inputs, target) in enumerate(data_loader):
+                inputs = inputs.cuda()
+                target = target.cuda()
+
                 output = model(inputs)
                 test_loss += F.cross_entropy(output, target, reduction="sum").item()
 
@@ -79,10 +80,10 @@ def test(model, data_loader):
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
-        test_loss /= data_loader.size()
+        test_loss /= len(data_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, data_loader.size(),
-            100. * correct / data_loader.size()))
+            test_loss, correct, len(data_loader.dataset),
+            100. * correct / len(data_loader.dataset)))
 
     except StopIteration:
         print("done one loop")
@@ -111,6 +112,20 @@ parser.add_argument('--weights_path', help='data path', default='/work/pytorch-t
 parser.add_argument('--log_interval', help='log_interval', type=int, default=100)
 parser.add_argument('--checkpoint', help='checkpoint', type=str, default="./checkpoint")
 parser.add_argument('--epochs', help='epochs', type=int, default=100)
+parser.add_argument('-b', '--batch-size', default=8, type=int,
+                    metavar='N',
+                    help='mini-batch size (default: 256), this is the total '
+                         'batch size of all GPUs on the current node when '
+                         'using Data Parallel or Distributed Data Parallel')
+
+parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+                    help='number of data loading workers (default: 4)')
+
+parser.add_argument('--multiprocessing-distributed', action='store_true',
+                    help='Use multi-processing distributed training to launch '
+                         'N processes per node, which has N GPUs. This is the '
+                         'fastest way to use PyTorch for either single node or '
+                         'multi node data parallel training')
 
 args = parser.parse_args()
 
@@ -137,15 +152,39 @@ if __name__ == '__main__':
     width = 224
     height = 224
 
+    traindir = os.path.join(args.data_path, 'train')
+    valdir = os.path.join(args.data_path, 'valid')
+
     normalize = transforms.Normalize([0.485, 0.485, 0.485], [0.229, 0.229, 0.229])
-    transform = transforms.Compose(
-        [transforms.Resize((width, height)), transforms.RandomHorizontalFlip(), transforms.ToTensor(), normalize])
 
-    test_transform = transforms.Compose(
-        [transforms.Resize((width, height)), transforms.ToTensor(), normalize])
+    train_dataset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ]))
 
-    train_loader = DataGenerator(os.path.join(args.data_path, "train"), width, height, transform)
-    test_loader = DataGenerator(os.path.join(args.data_path, "valid"), width, height, test_transform)
+    val_dataset = datasets.ImageFolder(
+        valdir,
+        transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+
+    train_sampler = None
+    val_sampler = None
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True, sampler=val_sampler)
 
     criterion = torch.nn.CrossEntropyLoss().cuda(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
@@ -153,7 +192,7 @@ if __name__ == '__main__':
     scheduler = StepLR(optimizer, step_size=1, gamma=0.6)
     for epoch in range(1, args.epochs + 1):
         train(args, model, train_loader, optimizer, epoch)
-        test(model, test_loader)
+        test(model, val_loader)
         scheduler.step()
 
         checkpoint = os.path.join(args.checkpoint, date_time)
