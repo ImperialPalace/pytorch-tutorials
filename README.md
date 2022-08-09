@@ -4,8 +4,11 @@ pytroch tutorials
 ## example-01
 Use nn.Module,nn.Sequential, nn.ModuleList, nn.ModuleDict to create model
 
-## example-0 ... example-0
+## example-02 ... example-07
 Build a vgg model.
+
+## example-08
+torchvision datasets.
 
 ## imagenet demo
 Train ILSVRC2012.

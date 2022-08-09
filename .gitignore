@@ -132,3 +132,5 @@ dmypy.json
 output
 
 *.pth
+input_data
+checkpoint
