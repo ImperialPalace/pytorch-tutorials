@@ -15,3 +15,5 @@ Train ILSVRC2012.
 
 ## 
 - [Cross-Entropy Loss Function](https://towardsdatascience.com/cross-entropy-loss-function-f38c4ec8643e)
+- machine-learning-articles | https://github.com/christianversloot/machine-learning-articles/tree/main
+  - 关于机器学习的文章，非常多的demo
