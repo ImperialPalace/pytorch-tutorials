@@ -1,4 +1,10 @@
 # pytroch-tutorials
+
+[Pytorch Tutorial](https://www.youtube.com/watch?v=2S1dgHpqCdk&list=PLhhyoLH6IjfxeoooqP9rhU3HJIAVAJ3Vz&ab_channel=AladdinPersson)
+ - youtube的教学视频，非常全面
+ - [Machine-Learning-Collection](https://github.com/aladdinpersson/Machine-Learning-Collection)
+
+
 pytroch tutorials
 
 ## example-01
