@@ -14,13 +14,14 @@ import torch.nn.functional as F
 import timm
 from transformers import DistilBertModel, DistilBertConfig, DistilBertTokenizer
 from PIL import Image
+import random
 
 # %%
 class CFG:
     debug = False
     image_path = "./dataset/flickr8k/Images/"
     captions_path = "./dataset/flickr8k/"
-    batch_size = 32
+    batch_size = 1
     num_workers = 4
     head_lr = 1e-3
     image_encoder_lr = 1e-4
@@ -50,6 +51,8 @@ class CFG:
     projection_dim = 256 
     dropout = 0.1
 
+    seed = 4125
+    
 # %%
 class AvgMeter:
     def __init__(self, name="Metric"):
@@ -84,28 +87,26 @@ class CLIPDataset(torch.utils.data.Dataset):
 
         self.image_filenames = image_filenames
         self.captions = list(captions)
-        self.encoded_captions = tokenizer(
+        
+        encoded_captions = tokenizer(
             list(captions), padding=True, truncation=True, max_length=CFG.max_length
         )
+        self.input_ids = torch.tensor(encoded_captions['input_ids'])
+        self.attention_mask = torch.tensor(encoded_captions['attention_mask'])
+        
         self.transforms = transforms
 
     def __getitem__(self, idx):
-        item = {
-            key: torch.tensor(values[idx])
-            for key, values in self.encoded_captions.items()
-        }
-
-        # image = cv2.imread(f"{CFG.image_path}/{self.image_filenames[idx]}")
-        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        item = {}
         
+        item['input_ids'] = self.input_ids[idx]
+        item['attention_mask'] = self.attention_mask[idx]
+      
         img_path = f"{CFG.image_path}/{self.image_filenames[idx]}"
         img = Image.open(img_path)
         image = self.transforms(img)
         item['image'] = image
         
-        
-        # image = self.transforms(image)
-        # item['image'] = torch.tensor(image).permute(2, 0, 1).float()
         item['caption'] = self.captions[idx]
 
         return item
@@ -113,8 +114,6 @@ class CLIPDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.captions)
-
-
 
 def get_transforms(mode="train"):
     train_transforms = transforms.Compose(
@@ -332,8 +331,19 @@ def valid_epoch(model, valid_loader):
         tqdm_object.set_postfix(valid_loss=loss_meter.avg)
     return loss_meter
 
+def seed_everything(seed):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
 
 def main():
+    seed_everything(CFG.seed)
+    
     train_df, valid_df = make_train_valid_dfs()
     tokenizer = DistilBertTokenizer.from_pretrained(CFG.text_tokenizer)
     train_loader = build_loaders(train_df, tokenizer, mode="train")
@@ -372,14 +382,3 @@ def main():
 
 # %%
 main()
-
-# %%
-# train_df, valid_df = make_train_valid_dfs()
-# tokenizer =  DistilBertTokenizer.from_pretrained(CFG.text_tokenizer)
-# train_loader = build_loaders(train_df, tokenizer, mode="train")
-# valid_loader = build_loaders(valid_df, tokenizer, mode="valid")
-
-# for item in train_loader:
-#     print(item)
-
-
