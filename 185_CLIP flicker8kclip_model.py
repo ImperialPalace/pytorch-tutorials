@@ -1,6 +1,6 @@
 
 #%%
-#copy from https://github.com/RustamyF/clip-multimodal-ml
+# copy from https://github.com/RustamyF/clip-multimodal-ml
 # CLIP Model and The Importance of Multimodal Embeddings - https://towardsdatascience.com/clip-model-and-the-importance-of-multimodal-embeddings-1c8f6b13bf72#:~:text=The%20CLIP%20loss%20aims%20to,the%20N%C2%B2%20%E2%88%92%20N%20incorrect%20pairings.
 
 # %%
@@ -24,6 +24,9 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+from transformers import logging
+logging.set_verbosity_warning()
 
 #%%
 @dataclass
@@ -289,6 +292,7 @@ def CLIP_loss(logits: torch.Tensor) -> torch.Tensor:
     # bring logits to cpu
     logits = logits.to("cpu")
 
+    a = logits.transpose(0, 1)
     # Calculate cross entropy losses along axis 0 and 1
     loss_i = F.cross_entropy(logits.transpose(0, 1), labels, reduction="mean")
     loss_t = F.cross_entropy(logits, labels, reduction="mean")
