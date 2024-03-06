@@ -36,6 +36,7 @@
 
 # %%
 from __future__ import print_function
+import argparse
 
 import glob
 from itertools import chain
@@ -369,61 +370,76 @@ scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
 
 # %%
 
-out_path = 'output/vit'
+out_path = './output'
 
 if not os.path.exists(out_path):
     os.makedirs(out_path)
+
+
+parser = argparse.ArgumentParser(description='Get the data info')
+parser.add_argument('-w', '--save', action='store_true')
+
+args = parser.parse_args()
+
+if __name__ == '__main__':
+    if args.save:
+        print("Write testing, save image to: {}".format(out_path))
     
-tic = time.time()
+    tic = time.time()
 
-count = 0    
-for epoch in range(epochs):
-    epoch_loss = 0
-    epoch_accuracy = 0
-    tice = time.time()
-    
-    for data, label in tqdm(train_loader):
+    count = 0    
+    for epoch in range(epochs):
+        epoch_loss = 0
+        epoch_accuracy = 0
+        tice = time.time()
         
-        save_image(data, "{}/{}.png".format(out_path, count))
-        
-        count =count+1
-        data = data.to(device)
-        label = label.to(device)
-
-        output = model(data)
-        loss = criterion(output, label)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        acc = (output.argmax(dim=1) == label).float().mean()
-        epoch_accuracy += acc / len(train_loader)
-        epoch_loss += loss / len(train_loader)
-
-    with torch.no_grad():
-        epoch_val_accuracy = 0
-        epoch_val_loss = 0
-        for data, label in valid_loader:
+        loop = tqdm(train_loader, desc='Train')
+        for data, label in loop:
+            if args.save:
+                save_image(data, "{}/{}.png".format(out_path, count))
+            
+            count =count+1
             data = data.to(device)
             label = label.to(device)
 
-            val_output = model(data)
-            val_loss = criterion(val_output, label)
+            output = model(data)
+            loss = criterion(output, label)
 
-            acc = (val_output.argmax(dim=1) == label).float().mean()
-            epoch_val_accuracy += acc / len(valid_loader)
-            epoch_val_loss += val_loss / len(valid_loader)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-    print(
-        f"Epoch : {epoch+1} - loss : {epoch_loss:.4f} - acc: {epoch_accuracy:.4f} - val_loss : {epoch_val_loss:.4f} - val_acc: {epoch_val_accuracy:.4f}"
-    )
+            acc = (output.argmax(dim=1) == label).float().mean()
+            epoch_accuracy += acc / len(train_loader)
+            epoch_loss += loss / len(train_loader)
+
+        with torch.no_grad():
+            epoch_val_accuracy = 0
+            epoch_val_loss = 0
+            for data, label in valid_loader:
+                data = data.to(device)
+                label = label.to(device)
+
+                val_output = model(data)
+                val_loss = criterion(val_output, label)
+
+                acc = (val_output.argmax(dim=1) == label).float().mean()
+                epoch_val_accuracy += acc / len(valid_loader)
+                epoch_val_loss += val_loss / len(valid_loader)
+
+        print(
+            f"Epoch : {epoch+1} - loss : {epoch_loss:.4f} - acc: {epoch_accuracy:.4f} - val_loss : {epoch_val_loss:.4f} - val_acc: {epoch_val_accuracy:.4f}"
+        )
+        
+        # loop.set_description(f'Epoch [{epoch+1}/{epochs}]')
+        # loop.set_postfix(loss = epoch_loss, acc = epoch_accuracy)
+            
+        toc = time.time()
+
+        print('epoch proccess time: {}\n'.format(str(1000 * (toc - tice)) + " ms"))
+
     toc = time.time()
 
-    print('epoch proccess time: {}\n'.format(str(1000 * (toc - tice)) + " ms"))
-
-toc = time.time()
-
-print('proccess time: {}'.format(str(1000 * (toc - tic)) + " ms"))
+    print('proccess time: {}'.format(str(1000 * (toc - tic)) + " ms"))
 
 
