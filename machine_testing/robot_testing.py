@@ -381,7 +381,26 @@ parser.add_argument('-w', '--save', action='store_true')
 
 args = parser.parse_args()
 
+
+def print_into():
+    import multiprocessing
+    import psutil
+    cpu_info = {}
+    cpu_info['physical_cores'] = multiprocessing.cpu_count()
+    cpu_info['logical_cores'] = multiprocessing.cpu_count()
+    cpu_info['cpu_percent'] = psutil.cpu_percent(interval=1)
+    print(cpu_info)
+    
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+        for i in range(num_gpus):
+            gpu_device = torch.cuda.get_device_name(i)
+            print("GPU {}: {}".format(i, gpu_device))
+            
+
 if __name__ == '__main__':
+    
+    print_into()
     if args.save:
         print("Write testing, save image to: {}".format(out_path))
     
