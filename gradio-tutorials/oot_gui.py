@@ -2,7 +2,9 @@ import gradio as gr
 import os
 import argparse
 
-from upperbody_gui import upper_body_tab
+from upper_body_gui import upper_body_tab
+from full_body_gui import full_body_tab
+from dress_gui import dress_tab
 
 import os
 from library.custom_logging import setup_logging
@@ -40,8 +42,15 @@ def UI(**kwargs):
         with gr.Tab('上半身换装'):
             upper_body_tab(headless=headless)
         
+        with gr.Tab('全身换装'):
+            full_body_tab(headless=headless)
+        
+        with gr.Tab('裙子换装'):
+            dress_tab(headless=headless)
+            
+                
         with gr.Tab('关于'):
-            gr.Markdown(f'kohya_ss GUI release {release}')
+            gr.Markdown(f'模特换装版本 {release}')
             with gr.Tab('README'):
                 gr.Markdown(README)
 

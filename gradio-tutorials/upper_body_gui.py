@@ -22,24 +22,13 @@ def process_hd(vton_img, garm_img, n_samples, n_steps, image_scale, seed):
     return None
 
 def upper_body_tab(
-    train_data_dir_input=gr.Textbox(),
-    reg_data_dir_input=gr.Textbox(),
-    output_dir_input=gr.Textbox(),
-    logging_dir_input=gr.Textbox(),
     headless=False,
 ):
-    dummy_db_true = gr.Label(value=True, visible=False)
-    dummy_db_false = gr.Label(value=False, visible=False)
-    dummy_headless = gr.Label(value=headless, visible=False)
 
-    # with gr.Tab('Training'):
-    #     gr.Markdown(
-    #         'Train a custom model using kohya train network LoRA python code...'
-    #     )
     with gr.Row():
-        gr.Markdown("## Full-body")
+        gr.Markdown("## 上半身")
     with gr.Row():
-        gr.Markdown("***Support upper-body/lower-body/dresses; garment category must be paired!!!***")
+        gr.Markdown("***试衣间***")
     with gr.Row():
         with gr.Column():
             vton_img = gr.Image(label="模特", sources='upload', type="filepath", height=384, value=model_hd)
